@@ -1,0 +1,183 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Imagen con Hotspots y Modales</title>
+  <style>
+    :root{
+      --accent:#0a84ff;
+      --bg:#f6f8fb;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --radius:12px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    body{margin:0;background:var(--bg);color:#0f172a}
+    .container{max-width:1100px;margin:36px auto;padding:20px}
+    h1{margin:0 0 12px;font-size:24px}
+    p.lead{color:var(--muted);margin:0 0 20px}
+
+    /* Imagen responsive con contenedor relativo */
+    .image-wrap{position:relative;background:linear-gradient(180deg, #fff, #f8fbff);border-radius:var(--radius);overflow:hidden;box-shadow:0 6px 20px rgba(2,6,23,0.08)}
+    .image-wrap img{display:block;width:100%;height:auto;max-height:70vh;object-fit:cover}
+
+    /* Hotspots (usamos % para posicionar y hacer responsive) */
+    .hotspot{position:absolute;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:3px solid rgba(255,255,255,0.95);box-shadow:0 6px 18px rgba(2,6,23,0.18);background:var(--accent);color:white;font-weight:600}
+    .hotspot:focus{outline:3px solid rgba(10,132,255,0.25)}
+    .hotspot.small{width:28px;height:28px;font-size:12px}
+
+    /* Tooltip simple */
+    .hotspot[data-title]:hover::after,.hotspot[data-title]:focus::after{
+      content:attr(data-title);
+      position:absolute;white-space:nowrap;left:50%;transform:translate(-50%,calc(-100% - 12px));background:rgba(15,23,42,0.95);color:#fff;padding:6px 10px;border-radius:8px;font-size:13px;box-shadow:0 6px 20px rgba(2,6,23,0.25)
+    }
+
+    /* Modal styles */
+    .modal-backdrop{position:fixed;inset:0;background:rgba(2,6,23,0.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}
+    .modal{background:var(--card);border-radius:14px;max-width:760px;width:100%;max-height:86vh;overflow:auto;box-shadow:0 18px 50px rgba(2,6,23,0.35);transform:translateY(10px);opacity:0;transition:all 220ms ease}
+    .modal.show{opacity:1;transform:none}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px;border-bottom:1px solid #eef2f7}
+    .modal-body{padding:18px}
+    .close-btn{background:transparent;border:0;color:var(--muted);font-size:20px;cursor:pointer}
+
+    /* Responsive tweaks */
+    @media (max-width:640px){
+      .hotspot{width:34px;height:34px}
+      .modal{border-radius:12px}
+    }
+
+    /* Small helper */
+    .legend{display:flex;gap:10px;align-items:center;margin-top:14px}
+    .legend .dot{width:12px;height:12px;border-radius:50%;background:var(--accent)}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Imagen con hotspots interactivos</h1>
+    <p class="lead">Haz clic en cualquier punto marcado para abrir una ventana con más información. El ejemplo usa posiciones en % para que funcione en responsivo.</p>
+
+    <div class="image-wrap" aria-hidden="false">
+      <!-- Cambia la imagen por la tuya. Mantén proporciones para mejores resultados -->
+      <img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1600&auto=format&fit=crop&ixlib=rb-4.0.3&s=4f6d7b07b9f3b8b3e3c4b1b5e6a1fabc" alt="Vista aérea con puntos de interés" id="mainImage">
+
+      <!-- Hotspots de ejemplo: usa left/top en % -->
+      <button class="hotspot" style="left:22%;top:28%;" data-title="Plaza central" data-id="1" aria-haspopup="dialog" aria-controls="modal" title="Plaza central">1</button>
+      <button class="hotspot" style="left:62%;top:42%;" data-title="Mirador" data-id="2" aria-haspopup="dialog" aria-controls="modal" title="Mirador">2</button>
+      <button class="hotspot small" style="left:78%;top:70%;" data-title="Estación" data-id="3" aria-haspopup="dialog" aria-controls="modal" title="Estación">+</button>
+    </div>
+
+    <div class="legend"><span class="dot"></span><small class="muted">Puntos interactivos</small></div>
+  </div>
+
+  <!-- Modal (reusable) -->
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal" role="document" id="modal">
+      <div class="modal-header">
+        <strong id="modalTitle">Título</strong>
+        <button class="close-btn" id="closeBtn" aria-label="Cerrar ventana">✕</button>
+      </div>
+      <div class="modal-body" id="modalBody">
+        <p>Contenido...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Datos de ejemplo por hotspot (puedes cargar esto desde JSON o una API)
+    const hotspotsData = {
+      "1": {
+        title: "Plaza central",
+        html: `
+          <p>La plaza central es un punto histórico con arquitectura colonial. Aquí encontrarás mercados y eventos culturales.</p>
+          <ul>
+            <li>Horario: 6:00 - 22:00</li>
+            <li>Entrada: gratuita</li>
+          </ul>
+          <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=1200&auto=format&fit=crop" alt="Plaza" style="max-width:100%;border-radius:8px;margin-top:8px">
+        `
+      },
+      "2": {
+        title: "Mirador",
+        html: `
+          <p>Un mirador con vista panorámica. Ideal para fotografía al atardecer.</p>
+          <p>Tip: lleva abrigo por la tarde.</p>
+        `
+      },
+      "3": {
+        title: "Estación",
+        html: `
+          <p>Estación de transporte público y punto de conexión con las rutas regionales.</p>
+          <p>Servicios: cajero, baños, tiendas.</p>
+        `
+      }
+    }
+
+    const backdrop = document.getElementById('modalBackdrop');
+    const modal = document.getElementById('modal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    const closeBtn = document.getElementById('closeBtn');
+
+    // Abrir modal y rellenar contenido
+    function openModal(id){
+      const data = hotspotsData[id];
+      if(!data) return;
+      modalTitle.innerText = data.title;
+      modalBody.innerHTML = data.html;
+      backdrop.style.display = 'flex';
+      // small delay to allow transition
+      requestAnimationFrame(()=>{backdrop.classList.add('open');modal.classList.add('show');});
+      backdrop.setAttribute('aria-hidden','false');
+
+      // trap focus (simple)
+      lastFocused = document.activeElement;
+      closeBtn.focus();
+      document.addEventListener('keydown', handleKeydown);
+    }
+
+    function closeModal(){
+      modal.classList.remove('show');
+      backdrop.classList.remove('open');
+      backdrop.style.display = 'none';
+      backdrop.setAttribute('aria-hidden','true');
+      if(window.lastFocused) window.lastFocused.focus();
+      document.removeEventListener('keydown', handleKeydown);
+    }
+
+    function handleKeydown(e){
+      if(e.key === 'Escape') closeModal();
+    }
+
+    // Delegación para hotspots
+    document.querySelectorAll('.hotspot').forEach(btn => {
+      btn.addEventListener('click', (ev)=>{
+        const id = ev.currentTarget.dataset.id;
+        openModal(id);
+      });
+      btn.addEventListener('keydown', (ev)=>{
+        if(ev.key === 'Enter' || ev.key === ' '){
+          ev.preventDefault();
+          openModal(ev.currentTarget.dataset.id);
+        }
+      })
+    });
+
+    // Cerrar al pulsar fuera del modal
+    backdrop.addEventListener('click', (ev)=>{
+      if(ev.target === backdrop) closeModal();
+    });
+    closeBtn.addEventListener('click', closeModal);
+
+    // Cómo añadir hotspots (comentario para ti):
+    // 1. Añade un <button class="hotspot" style="left:XX%;top:YY%;" data-id="N">N</button>
+    // 2. Añade la entrada correspondiente en hotspotsData con la misma clave "N"
+    // 3. Para mantener la accesibilidad, cada hotspot es un botón; soporta foco y teclado.
+
+    // Opcional: cargar datos desde JSON remoto
+    // fetch('hotspots.json').then(r=>r.json()).then(data=>{ Object.assign(hotspotsData,data); });
+
+  </script>
+</body>
+</html>

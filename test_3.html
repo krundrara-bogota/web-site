@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mapa Interactivo de Colombia</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<style>
+  #map {
+    width: 100vw;
+    height: 100vh;
+  }
+  .popup-video {
+    width: 250px;
+    height: 150px;
+  }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+// Tamaño de la imagen (ajústalo a la resolución real del PNG)
+const w = 2000;
+const h = 2700;
+
+// Crear mapa a partir de una imagen
+const map = L.map('map', {
+    crs: L.CRS.Simple,
+    minZoom: -2
+});
+
+const bounds = [[0,0], [h, w]];
+const image = L.imageOverlay('img/mapa-colombia.png', bounds).addTo(map);
+map.fitBounds(bounds);
+
+// Ejemplo de hotspots
+const puntos = [
+    {
+        nombre: "Bogotá",
+        coords: [1400, 810],
+        texto: "Capital de Colombia. Aquí un video corto:",
+        video: "https://www.youtube.com/embed/6t0_GvjvWf0"
+    },
+    {
+        nombre: "Medellín",
+        coords: [1668, 604],
+        texto: "Ciudad de la eterna primavera ☀️",
+        video: "https://www.youtube.com/embed/ojC5F9Lfo2I"
+    },
+    {
+        nombre: "Cali",
+        coords: [1238, 450],
+        texto: "Cali es Cali... y lo demás es loma 💃",
+        video: "https://www.youtube.com/embed/t7SvhcKlFs4"
+    }
+];
+
+// Crear marcadores
+puntos.forEach(p => {
+    const popupContent = `
+        <b>${p.nombre}</b><br>
+        ${p.texto}<br>
+        <iframe class="popup-video"
+            src="${p.video}"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allowfullscreen>
+        </iframe>
+    `;
+
+    L.marker(p.coords).addTo(map).bindPopup(popupContent);
+});
+</script>
+
+</body>
+</html>

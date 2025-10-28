@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Mapa Interactivo v3</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+<style>
+  #map {
+    width: 100vw;
+    height: 100vh;
+  }
+
+  /* Estilos base marcador */
+  .marker-base {
+    width: 30px;
+    height: 30px;
+    background-size: cover;
+    border-radius: 50%;
+    border: 3px solid white;
+    animation: pulse 2s infinite;
+    cursor: pointer;
+  }
+
+  /* Colores por categoría */
+  .cat-historia { background-color: #ff4e50; } /* rojo */
+  .cat-naturaleza { background-color: #2ecc71; } /* verde */
+  .cat-gastro { background-color: #f1c40f; } /* amarillo */
+
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.25); }
+    100% { transform: scale(1); }
+  }
+
+  /* Animación de ruta */
+  .route-line {
+    stroke-dasharray: 10;
+    animation: dash 1s linear infinite;
+  }
+
+  @keyframes dash {
+    to {
+      stroke-dashoffset: -20;
+    }
+  }
+
+  .popup-video {
+    width: 250px;
+    height: 150px;
+  }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+// Tamaño real del mapa
+const w = 2000;
+const h = 2700;
+
+const map = L.map('map', {
+  crs: L.CRS.Simple,
+  minZoom: -2
+});
+
+const bounds = [[0, 0], [h, w]];
+L.imageOverlay('img/mapa-colombia.png', bounds).addTo(map);
+map.fitBounds(bounds);
+
+// ======== PUNTOS DE EJEMPLO ========
+const puntos = [
+  {
+    nombre: "Bogotá",
+    coords: [1400, 1050],
+    categoria: "historia",
+    desc: "Capital cultural",
+    video: "https://www.youtube.com/embed/6t0_GvjvWf0"
+  },
+  {
+    nombre: "Parque Tayrona",
+    coords: [800, 950],
+    categoria: "naturaleza",
+    desc: "Playas y selva",
+    video: "https://www.youtube.com/embed/pVFzSsbQPFw"
+  },
+  {
+    nombre: "Cali",
+    coords: [1550, 800],
+    categoria: "gastro",
+    desc: "Capital de la salsa y el cholado",
+    video: "https://www.youtube.com/embed/zdhK9Hc7wm0"
+  }
+];
+
+// Crear marcador por categoría
+puntos.forEach(p => {
+  const markerIcon = L.divIcon({
+    className: `marker-base cat-${p.categoria}`,
+    iconSize: [32,32]
+  });
+
+  const marker = L.marker(p.coords, { icon: markerIcon })
+    .addTo(map)
+    .bindTooltip(p.nombre)
+    .bindPopup(`
+      <b>${p.nombre}</b><br>
+      <i>${p.desc}</i><br><br>
+      <iframe class="popup-video"
+        src="${p.video}"
+        frameborder="0"
+        allowfullscreen>
+      </iframe>
+    `);
+});
+
+
+// ======== RUTA TURÍSTICA ANIMADA ========
+const rutaCoords = [
+  [1400, 1050], // Bogotá
+  [1200, 900], // Medellín (ficticio)
+  [800, 950]   // Tayrona
+];
+
+L.polyline(rutaCoords, {
+  color: "#3498db",
+  weight: 4,
+  className: "route-line"
+}).addTo(map);
+
+
+// ======== CLICK PARA CAPTURAR COORDENADAS ========
+map.on('click', function(e) {
+  const punto = [Math.round(e.latlng.lat), Math.round(e.latlng.lng)];
+  alert("Punto nuevo: " + punto);
+  console.log("Agregar este punto → ", punto);
+});
+</script>
+
+</body>
+</html>
